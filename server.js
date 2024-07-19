@@ -1,20 +1,54 @@
-// server.js
-import express from 'express';
-import connectDB from './config/db.js';
-import todoRoutes from './routes/todoRoutes.js';
+// import npm packages
+import "dotenv/config.js"
+import express from 'express'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import createError from 'http-errors'
+import logger from 'morgan'
+import './config/database.js'
+// import connectDB from "./config/database.js"
 
-const app = express();
+// import routers
+import { router as indexRouter } from './routes/index.js'
+import { router as usersRouter } from './routes/todos.js'
+import { router as todosRouter } from './routes/todos.js'
 
-// Connect to MongoDB
-connectDB();
+// create the express app
+const app = express()
 
-// Middleware
-app.use(express.urlencoded({ extended: true }));
-app.set('view engine', 'ejs');
+// data base connection 
+// connectDB()
+// view engine setup
+app.set('view engine', 'ejs')
 
-// Routes
-app.use('/', todoRoutes);
+// basic middleware
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(
+  express.static(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), 'public')
+  )
+)
 
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// mount imported routes
+app.use('/', indexRouter)
+app.use('/todos', usersRouter)
+
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404))
+})
+
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message
+  res.locals.error = req.app.get('env') === 'development' ? err : {}
+
+  // render the error page
+  res.status(err.status || 500)
+  res.render('error')
+})
+
+export { app }
